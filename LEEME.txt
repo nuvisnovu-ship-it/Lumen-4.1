@@ -1,0 +1,54 @@
+LUMEN · CAJA — PWA independiente
+==================================
+
+Qué es
+------
+Una app web instalable (PWA) para tu sistema de caja: ventas, inventario,
+clientes con deuda/abono, y tasa BCV oficial. Los datos se guardan en el
+almacenamiento local de cada teléfono/navegador (no se sincronizan entre
+dispositivos).
+
+Archivos
+--------
+index.html         — la app completa
+manifest.json       — metadatos para que se pueda "instalar"
+service-worker.js   — permite que funcione offline
+icon-192.png / icon-512.png — íconos de la app
+
+IMPORTANTE: para que "instalar como app" funcione en Android/Chrome,
+el navegador exige que los archivos se sirvan por HTTPS desde un dominio
+real (no sirve abrir el index.html directo desde el teléfono con file://).
+Necesitas subir estos 5 archivos a algún hosting gratuito. Opciones fáciles:
+
+OPCIÓN A — GitHub Pages (recomendada, gratis, tú tienes cuenta de GitHub)
+1. Crea un repositorio nuevo en GitHub (puede ser público o privado).
+2. Sube estos 5 archivos a la raíz del repositorio.
+3. Ve a Settings → Pages → Source: selecciona la rama "main" y carpeta "/ (root)".
+4. Espera 1-2 minutos. Tu app quedará en:
+   https://tu-usuario.github.io/nombre-del-repo/
+
+OPCIÓN B — Netlify Drop (más rápido, sin cuenta de GitHub)
+1. Entra a https://app.netlify.com/drop desde tu computadora.
+2. Arrastra la carpeta completa con los 5 archivos.
+3. Netlify te da un link tipo https://algo-al-azar.netlify.app al instante.
+   (Puedes crear cuenta gratis después para que el link no cambie).
+
+OPCIÓN C — Vercel
+1. Crea cuenta en vercel.com, "Add New Project" → sube la carpeta como
+   proyecto estático (framework: "Other").
+
+Instalar en el teléfono (Android)
+----------------------------------
+1. Abre el link (https://...) en Chrome desde el celular.
+2. Toca el menú (⋮) → "Instalar app" o "Agregar a pantalla de inicio".
+3. Listo — queda como ícono, abre en pantalla completa, y funciona offline
+   (excepto la tasa BCV, que necesita internet para actualizarse).
+
+Notas
+-----
+- Cada teléfono guarda sus propios datos (productos, clientes, ventas, caja).
+  Si dos personas instalan la app, cada una ve solo lo que registra ella.
+- Si borras datos del navegador ("borrar datos del sitio") se pierde todo
+  lo guardado — no hay respaldo en la nube en esta versión.
+- La tasa BCV se intenta traer automática al abrir la app; si falla, se
+  puede ingresar a mano con el lápiz junto a la tasa.
