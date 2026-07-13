@@ -336,6 +336,15 @@ function computeTotals(session) {
 
 function clientBalance(c) { return c.transactions.reduce((acc, t) => acc + (t.type === "debe" ? t.amountUSD : -t.amountUSD), 0); }
 
+function dailySalesSummary() {
+  const today = new Date().toDateString();
+  const todays = state.sales.filter((s) => new Date(s.date).toDateString() === today);
+  const total = todays.reduce((a, s) => a + s.totalUSD, 0);
+  const byMethod = {};
+  todays.forEach((s) => { byMethod[s.method] = (byMethod[s.method] || 0) + s.totalUSD; });
+  return { count: todays.length, total, byMethod };
+}
+
 /* ---------------- render ---------------- */
 function render() {
   const app = document.getElementById("app");
@@ -551,11 +560,21 @@ function renderCash() {
 
   const isOpen = state.session && state.session.open;
   const totals = isOpen ? computeTotals(state.session) : null;
+  const daily = dailySalesSummary();
 
   return `
     <div class="row" style="margin-bottom:12px;">
       <h1>Caja</h1>
       <button data-act="cash-history" class="muted" style="background:none; font-size:12px; text-decoration:underline;">Historial</button>
+    </div>
+
+    <div class="card" style="margin-bottom:12px;">
+      <div class="row">
+        <div class="label">Ventas de hoy</div>
+        <div class="muted" style="font-size:11px;">${daily.count} venta${daily.count===1?"":"s"}</div>
+      </div>
+      <div class="mono green" style="font-size:24px; font-weight:700;">${fmtUSD(daily.total)}</div>
+      ${daily.count>0 ? `<div class="muted" style="font-size:11px; margin-top:6px;">${PAYMENT_METHODS.filter((m)=>daily.byMethod[m.id]).map((m)=>`${m.label}: ${fmtUSD(daily.byMethod[m.id])}`).join(" · ")}</div>` : ""}
     </div>
 
     ${!isOpen && !state.cashOpening ? `
