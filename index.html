@@ -1,0 +1,1358 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>Lumen · Caja</title>
+<meta name="theme-color" content="#0E1013">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Lumen Caja">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<script>(function(){ try { document.documentElement.setAttribute("data-theme", localStorage.getItem("inv_theme") || "dark"); } catch (e) {} })();</script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<style>
+  :root{
+    --bg:#0E1013; --card:#15181D; --card2:#1C2028; --border:#22262E; --border2:#2A2F39;
+    --text:#E7E9ED; --muted:#5B6470; --muted2:#9AA2AF;
+    --green:#3DD68C; --greenBg:#12241C; --greenBorder:#1F3A2C;
+    --amber:#F0A34C; --amberBg:#2A1A16; --amberBorder:#3A2A20;
+    --red:#F0666B; --redBg:#3A1A1A;
+  }
+  :root[data-theme="light"]{
+    --bg:#F4F5F7; --card:#FFFFFF; --card2:#EFF0F3; --border:#E2E4E9; --border2:#D3D6DD;
+    --text:#1A1C20; --muted:#8891A0; --muted2:#525A66;
+    --green:#1D9A5E; --greenBg:#E5F6ED; --greenBorder:#BCE6D0;
+    --amber:#B06A0C; --amberBg:#FBEEDC; --amberBorder:#F0D2A3;
+    --red:#C43A40; --redBg:#FBE5E6;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0; height:100%; background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
+  #app{min-height:100vh; display:flex; flex-direction:column;}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-variant-numeric:tabular-nums;}
+  .content{flex:1; overflow-y:auto; padding:16px; padding-bottom:88px;}
+  h1{font-size:18px; font-weight:600; margin:0;}
+  .muted{color:var(--muted);}
+  .muted2{color:var(--muted2);}
+  .green{color:var(--green);}
+  .amber{color:var(--amber);}
+  .red{color:var(--red);}
+
+  input,select{
+    width:100%; background:var(--bg); border:1px solid var(--border2); border-radius:10px;
+    padding:10px 12px; font-size:14px; color:var(--text); outline:none; font-family:inherit;
+  }
+  input:focus,select:focus{border-color:var(--green);}
+  input::placeholder{color:var(--muted);}
+
+  button{font-family:inherit; cursor:pointer; border:none; -webkit-appearance:none;}
+  .btn{border-radius:10px; padding:10px 14px; font-size:14px; font-weight:500;}
+  .btn-primary{background:var(--green); color:var(--bg); font-weight:600;}
+  .btn-primary:disabled{opacity:.35;}
+  .btn-ghost{background:var(--card2); color:var(--muted2);}
+  .btn-danger-ghost{background:var(--card2); color:var(--red); border:1px solid var(--border2);}
+  .icon-btn{padding:8px; border-radius:8px; background:var(--card2); color:var(--muted2); display:inline-flex; align-items:center; justify-content:center;}
+
+  .card{background:var(--card); border:1px solid var(--border); border-radius:14px; padding:14px;}
+  .row{display:flex; align-items:center; justify-content:space-between;}
+  .stack{display:flex; flex-direction:column; gap:8px;}
+  .gap2{display:flex; gap:8px;}
+  .gap2 > *{flex:1;}
+
+  .ratebar{background:var(--card); border-bottom:1px solid var(--border); padding:12px 16px; position:sticky; top:0; z-index:10;}
+  .ratebar .label{font-size:10px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); font-weight:500;}
+  .ratebar .value{font-size:18px; font-weight:600; font-family:ui-monospace,monospace;}
+  .ratebar .sub{font-size:10px; color:var(--muted); margin-top:2px;}
+
+  nav.tabbar{position:fixed; bottom:0; left:0; right:0; background:var(--card); border-top:1px solid var(--border);
+    display:flex; padding-bottom:env(safe-area-inset-bottom);}
+  nav.tabbar button{flex:1; background:none; display:flex; flex-direction:column; align-items:center; gap:2px;
+    padding:10px 0; color:var(--muted); font-size:10px; font-weight:500;}
+  nav.tabbar button.active{color:var(--green);}
+  nav.tabbar .ic{font-size:19px; line-height:1;}
+
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:8px;}
+  .grid3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;}
+  .list-item{background:var(--card); border:1px solid var(--border); border-radius:12px; padding:12px 16px; margin-bottom:8px;}
+  .list-item.tap:active{background:var(--card2);}
+  .empty{text-align:center; color:var(--muted); font-size:14px; padding:40px 0;}
+  .searchwrap{position:relative; margin-bottom:12px;}
+  .searchwrap input{padding-left:34px;}
+  .searchwrap .sic{position:absolute; left:11px; top:50%; transform:translateY(-50%); color:var(--muted); font-size:14px;}
+
+  .pill{border-radius:10px; padding:9px 6px; font-size:12px; font-weight:500; border:1px solid var(--border2); background:var(--bg); color:var(--muted2); text-align:center;}
+  .pill.active{background:var(--green); color:var(--bg); border-color:var(--green);}
+  .pill:disabled{opacity:.3;}
+
+  .prodbtn{background:var(--card); border:1px solid var(--border); border-radius:12px; padding:12px; text-align:left;}
+  .prodbtn:active{background:var(--card2);}
+
+  .badge-warn{font-size:11px; color:var(--amber); background:var(--amberBg); border:1px solid var(--amberBorder); border-radius:10px; padding:8px 12px; margin-bottom:12px;}
+  .badge-tx-debe{color:var(--amber);} .badge-tx-abona{color:var(--green);}
+  .loading{display:flex; align-items:center; justify-content:center; height:100vh; color:var(--muted); font-family:monospace; font-size:14px;}
+  .authwrap{position:relative; display:flex; flex-direction:column; justify-content:center; min-height:100vh; padding:24px;}
+  .accbar{display:flex; align-items:center; justify-content:space-between; padding:6px 16px; font-size:11px; background:var(--card); border-bottom:1px solid var(--border);}
+</style>
+</head>
+<body>
+<div id="app"><div class="loading">cargando...</div></div>
+
+<script>
+/* ---------------- Firebase (respaldo automático en la nube) ----------------
+   Reemplaza estos valores por los de TU proyecto de Firebase
+   (Firebase Console → ⚙️ Configuración del proyecto → tus apps → SDK setup).
+   Estos valores no son secretos: son públicos por diseño, la seguridad real
+   la dan las reglas de Firestore (solo cada usuario lee/escribe su propio documento). */
+const firebaseConfig = {
+  apiKey: "AIzaSyDmnZomvtYaV62dfQOjXp8uZFRYKEFT_Ec",
+  authDomain: "lumencaja.firebaseapp.com",
+  projectId: "lumencaja",
+  storageBucket: "lumencaja.firebasestorage.app",
+  messagingSenderId: "483500177998",
+  appId: "1:483500177998:web:63ba70d9349bfb8a53611f",
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+try { db.enablePersistence({ synchronizeTabs: true }).catch(() => {}); } catch (e) {}
+
+function authErrorMessage(e) {
+  const map = {
+    "auth/email-already-in-use": "Ese correo ya tiene una cuenta. Intenta entrar en vez de crear una.",
+    "auth/invalid-email": "El correo no es válido.",
+    "auth/weak-password": "La contraseña debe tener al menos 6 caracteres.",
+    "auth/user-not-found": "No existe una cuenta con ese correo.",
+    "auth/wrong-password": "Contraseña incorrecta.",
+    "auth/invalid-credential": "Correo o contraseña incorrectos.",
+    "auth/network-request-failed": "Sin conexión a internet. Intenta de nuevo.",
+    "auth/too-many-requests": "Demasiados intentos. Espera un momento e intenta de nuevo.",
+  };
+  return map[e.code] || "Ocurrió un error. Intenta de nuevo.";
+}
+
+/* ---------------- utilidades ---------------- */
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const fmtUSD = (n) => "$" + (Number(n) || 0).toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fmtBs = (n) => (Number(n) || 0).toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " Bs";
+const fmtDate = (iso) => new Date(iso).toLocaleDateString("es-VE", { day: "2-digit", month: "short", year: "numeric" });
+const fmtDateTime = (iso) => new Date(iso).toLocaleString("es-VE", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+function load(key, fallback) {
+  try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; } catch { return fallback; }
+}
+function save(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) { console.error(e); } }
+
+const PAYMENT_METHODS = [
+  { id: "efectivo_usd", label: "Efectivo $" },
+  { id: "efectivo_bs", label: "Efectivo Bs" },
+  { id: "pago_movil", label: "Pago móvil" },
+  { id: "transferencia", label: "Transferencia" },
+  { id: "credito", label: "Crédito (fiado)" },
+];
+const methodLabel = (id) => (PAYMENT_METHODS.find((m) => m.id === id) || {}).label || id;
+const LOW_STOCK_THRESHOLD = 5;
+const HIGH_BALANCE_THRESHOLD = 50;
+
+/* ---------------- tasa BCV: fuente oficial (Banco Central de Venezuela) ---------------- */
+async function fetchBcvRate() {
+  try {
+    const r = await fetch("https://ve.dolarapi.com/v1/dolares/oficial");
+    if (r.ok) {
+      const d = await r.json();
+      const rate = Number(d.promedio || d.venta || d.compra);
+      if (rate > 0) return { rate, source: "auto", fetchedAt: new Date().toISOString(), fuente: `DolarAPI · ${d.nombre || d.fuente || "Oficial"}` };
+    }
+  } catch (e) {}
+  try {
+    const r = await fetch("https://pydolarve.org/api/v1/dollar?page=bcv&monitor=bcv");
+    if (r.ok) {
+      const d = await r.json();
+      const rate = Number(d.price || (d.monitors && d.monitors.bcv && d.monitors.bcv.price));
+      if (rate > 0) return { rate, source: "auto", fetchedAt: new Date().toISOString(), fuente: "pyDolarVenezuela · BCV" };
+    }
+  } catch (e) {}
+  try {
+    const r = await fetch("https://bcv-exchange-rates.vercel.app/get_bcv_exchange_rates");
+    if (r.ok) {
+      const d = await r.json();
+      const raw = d && d.data && d.data.dolar && d.data.dolar.value;
+      const rate = raw ? Number(String(raw).replace(",", ".")) : 0;
+      if (rate > 0) return { rate, source: "auto", fetchedAt: new Date().toISOString(), fuente: "bcv.org.ve (directo)" };
+    }
+  } catch (e) {}
+  return null;
+}
+
+/* ---------------- estado global ---------------- */
+const state = {
+  tab: "pos",
+  products: load("inv_products", []),
+  clients: load("inv_clients", []),
+  sales: load("inv_sales", []),
+  session: load("inv_session", null),
+  cashHistory: load("inv_cashHistory", []),
+  bcv: load("inv_bcv", { rate: 0, source: "manual", fetchedAt: null, fuente: "" }),
+  rateFetching: false,
+  rateEditing: false,
+  // vistas internas
+  clientOpenId: null,
+  cashShowHistory: false,
+  posCart: [],
+  posSearch: "",
+  posMethod: "efectivo_usd",
+  posClientId: "",
+  posNote: "",
+  posReceipt: null,
+  invAdding: false,
+  invEditId: null,
+  clAdding: false,
+  clSearch: "",
+  voidSaleId: null,
+  // cuenta / sincronización en la nube
+  authReady: false,
+  authUser: null,
+  authMode: "login",
+  authEmail: "",
+  authPassword: "",
+  authError: "",
+  authInfo: "",
+  authBusy: false,
+  lastLocalChange: load("inv_lastLocalChange", null),
+  lastSyncAt: load("inv_lastSync", null),
+  syncing: false,
+  syncStatus: "idle",
+};
+
+const PERSIST_MAP = { products: "inv_products", clients: "inv_clients", sales: "inv_sales", session: "inv_session", cashHistory: "inv_cashHistory", bcv: "inv_bcv" };
+
+function persistLocal(keys) { keys.forEach((k) => save(PERSIST_MAP[k], state[k])); }
+
+let cloudPushTimer = null;
+function scheduleCloudPush() {
+  if (!state.authUser) return;
+  clearTimeout(cloudPushTimer);
+  cloudPushTimer = setTimeout(() => { pushToCloud(); }, 1200);
+}
+
+function persist(keys) {
+  persistLocal(keys);
+  state.lastLocalChange = new Date().toISOString();
+  save("inv_lastLocalChange", state.lastLocalChange);
+  scheduleCloudPush();
+}
+
+function cloudDocRef() { return db.collection("users").doc(state.authUser.uid); }
+
+async function pushToCloud() {
+  if (!state.authUser) return;
+  state.syncing = true; renderAccountBarOnly();
+  const payload = {
+    products: state.products, clients: state.clients, sales: state.sales,
+    session: state.session, cashHistory: state.cashHistory, bcv: state.bcv,
+    updatedAt: state.lastLocalChange || new Date().toISOString(),
+  };
+  try {
+    await cloudDocRef().set(payload);
+    state.lastSyncAt = payload.updatedAt; save("inv_lastSync", state.lastSyncAt);
+    state.syncStatus = "ok";
+  } catch (e) { console.warn("Error al sincronizar:", e); state.syncStatus = "error"; }
+  state.syncing = false; renderAccountBarOnly();
+}
+
+async function pullFromCloud() {
+  try {
+    const snap = await cloudDocRef().get();
+    return snap.exists ? snap.data() : null;
+  } catch (e) { console.warn("Error al leer la nube:", e); return null; }
+}
+
+function localHasAnyData() {
+  return state.products.length > 0 || state.clients.length > 0 || state.sales.length > 0 || state.cashHistory.length > 0 || !!state.session;
+}
+
+async function resolveInitialSync() {
+  state.syncing = true; render();
+  const cloud = await pullFromCloud();
+  const localChangeTime = state.lastLocalChange ? new Date(state.lastLocalChange).getTime() : 0;
+  if (cloud) {
+    const cloudTime = cloud.updatedAt ? new Date(cloud.updatedAt).getTime() : 0;
+    if (!localHasAnyData() || cloudTime > localChangeTime) {
+      state.products = cloud.products || [];
+      state.clients = cloud.clients || [];
+      state.sales = cloud.sales || [];
+      state.session = cloud.session || null;
+      state.cashHistory = cloud.cashHistory || [];
+      if (cloud.bcv) state.bcv = cloud.bcv;
+      persistLocal(["products", "clients", "sales", "session", "cashHistory", "bcv"]);
+      state.lastLocalChange = cloud.updatedAt; save("inv_lastLocalChange", state.lastLocalChange);
+      state.lastSyncAt = cloud.updatedAt; save("inv_lastSync", state.lastSyncAt);
+      state.syncStatus = "ok";
+    } else {
+      await pushToCloud();
+    }
+  } else {
+    await pushToCloud();
+  }
+  state.syncing = false; render();
+}
+
+/* ---------------- registrar venta ---------------- */
+function registerSale({ items, total, payment, clientId, note }) {
+  const client = state.clients.find((c) => c.id === clientId);
+  const sale = {
+    id: uid(), date: new Date().toISOString(), items, totalUSD: total,
+    rate: state.bcv.rate || 0, totalBs: total * (state.bcv.rate || 0),
+    method: payment, clientId: clientId || null, clientName: client ? client.name : "Cliente ocasional", note: note || "",
+  };
+  state.sales = [sale, ...state.sales];
+
+  state.products = state.products.map((p) => {
+    const item = items.find((it) => it.productId === p.id);
+    return item ? { ...p, qty: p.qty - item.qty } : p;
+  });
+
+  if (payment === "credito" && client) {
+    const tx = { id: uid(), type: "debe", amountUSD: total, rate: state.bcv.rate || 0, amountBs: total * (state.bcv.rate || 0), note: `Venta #${sale.id.slice(-5)}`, date: sale.date };
+    state.clients = state.clients.map((c) => (c.id === client.id ? { ...c, transactions: [tx, ...c.transactions] } : c));
+  }
+
+  if (state.session && state.session.open && payment !== "credito") {
+    const mv = { id: uid(), type: "venta", amountUSD: total, method: payment, note: `Venta #${sale.id.slice(-5)}`, date: sale.date };
+    state.session = { ...state.session, movements: [mv, ...state.session.movements] };
+  }
+
+  persist(["sales", "products", "clients", "session"]);
+  return sale;
+}
+
+function downloadCSV(filename, rows) {
+  const csv = rows.map((r) => r.map((v) => `"${String(v ?? "").replace(/"/g, '""')}"`).join(",")).join("\n");
+  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function buildReceiptText(r) {
+  const lines = [];
+  lines.push("🧾 LUMEN · CAJA - Recibo de venta");
+  lines.push(new Date(r.date).toLocaleString("es-VE", { dateStyle: "medium", timeStyle: "short" }));
+  lines.push("");
+  r.items.forEach((it) => lines.push(`${it.qty} x ${it.name} - ${fmtUSD(it.price * it.qty)}`));
+  lines.push("");
+  lines.push(`Total: ${fmtUSD(r.totalUSD)}${r.rate > 0 ? ` (${fmtBs(r.totalBs)})` : ""}`);
+  lines.push(`Pago: ${methodLabel(r.method)}`);
+  lines.push(`Cliente: ${r.clientName}`);
+  return lines.join("\n");
+}
+
+function voidSale(saleId) {
+  const sale = state.sales.find((s) => s.id === saleId);
+  if (!sale) return;
+  const tag = `Venta #${sale.id.slice(-5)}`;
+  state.products = state.products.map((p) => {
+    const item = sale.items.find((it) => it.productId === p.id);
+    return item ? { ...p, qty: p.qty + item.qty } : p;
+  });
+  if (sale.method === "credito" && sale.clientId) {
+    state.clients = state.clients.map((c) => c.id === sale.clientId
+      ? { ...c, transactions: c.transactions.filter((t) => t.note !== tag) }
+      : c);
+  }
+  if (state.session && state.session.open) {
+    state.session = { ...state.session, movements: state.session.movements.filter((m) => m.note !== tag) };
+  }
+  state.sales = state.sales.filter((s) => s.id !== saleId);
+  persist(["sales", "products", "clients", "session"]);
+}
+
+function computeTotals(session) {
+  const mv = (session && session.movements) || [];
+  const sumBy = (types, method) => mv.filter((m) => types.includes(m.type) && m.method === method).reduce((a, m) => a + m.amountUSD, 0);
+  const efectivoUsd = (session ? session.openingUSD : 0) + sumBy(["venta", "ingreso"], "efectivo_usd") - sumBy(["egreso"], "efectivo_usd");
+  const efectivoBsUsd = (session ? session.openingBsAsUsd || 0 : 0) + sumBy(["venta", "ingreso"], "efectivo_bs") - sumBy(["egreso"], "efectivo_bs");
+  const otros = {};
+  ["pago_movil", "transferencia"].forEach((m) => { otros[m] = sumBy(["venta", "ingreso"], m) - sumBy(["egreso"], m); });
+  const ventasTotal = mv.filter((m) => m.type === "venta").reduce((a, m) => a + m.amountUSD, 0);
+  const ingresos = mv.filter((m) => m.type === "ingreso").reduce((a, m) => a + m.amountUSD, 0);
+  const egresos = mv.filter((m) => m.type === "egreso").reduce((a, m) => a + m.amountUSD, 0);
+  return { efectivoUsd, efectivoBsUsd, otros, ventasTotal, ingresos, egresos };
+}
+
+function clientBalance(c) { return c.transactions.reduce((acc, t) => acc + (t.type === "debe" ? t.amountUSD : -t.amountUSD), 0); }
+
+/* ---------------- render ---------------- */
+function render() {
+  const app = document.getElementById("app");
+  if (!state.authReady) { app.innerHTML = `<div class="loading">cargando...</div>`; return; }
+  if (!state.authUser) { app.innerHTML = renderAuthScreen(); bindEvents(); return; }
+  app.innerHTML = `
+    ${renderAccountBar()}
+    ${renderRateBar()}
+    <div class="content">${renderTab()}</div>
+    ${renderNav()}
+  `;
+  bindEvents();
+}
+
+function renderAccountBarOnly() {
+  const bar = document.getElementById("accBar");
+  if (bar) bar.outerHTML = renderAccountBar();
+}
+
+function renderAccountBar() {
+  const offline = !navigator.onLine;
+  const icon = offline ? "📴" : state.syncing ? "⟳" : state.syncStatus === "error" ? "⚠️" : "☁️";
+  const text = offline ? "Sin conexión — se guarda local" : state.syncing ? "Sincronizando…" : state.syncStatus === "error" ? "Error al sincronizar" : state.lastSyncAt ? `Al día · ${fmtDate(state.lastSyncAt)}` : "Sin sincronizar";
+  const theme = document.documentElement.getAttribute("data-theme") || "dark";
+  return `
+    <div id="accBar" class="accbar">
+      <span class="muted" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:40%;">${esc(state.authUser.email)}</span>
+      <span class="gap2" style="align-items:center; flex:0 0 auto; gap:6px;">
+        <span class="${offline?'amber':'muted'}" style="font-size:11px;">${icon} ${text}</span>
+        <button class="icon-btn" style="padding:4px 6px; font-size:13px;" data-act="toggle-theme">${theme==="light"?"🌙":"☀️"}</button>
+        <button class="icon-btn" style="padding:4px 8px; font-size:11px;" data-act="auth-logout">Salir</button>
+      </span>
+    </div>`;
+}
+
+function renderAuthScreen() {
+  const theme = document.documentElement.getAttribute("data-theme") || "dark";
+  return `
+    <div class="authwrap">
+      <button class="icon-btn" style="position:absolute; top:16px; right:16px; padding:6px 8px;" data-act="toggle-theme">${theme==="light"?"🌙":"☀️"}</button>
+      <div style="text-align:center; margin-bottom:24px;">
+        <div style="font-size:26px; font-weight:700;">LUMEN · CAJA</div>
+        <div class="muted" style="font-size:12px; margin-top:4px;">Tus datos se respaldan solos en la nube</div>
+      </div>
+      <div class="card stack">
+        <div class="gap2">
+          <button class="btn ${state.authMode==='login'?'btn-primary':'btn-ghost'}" data-act="auth-mode" data-mode="login">Entrar</button>
+          <button class="btn ${state.authMode==='register'?'btn-primary':'btn-ghost'}" data-act="auth-mode" data-mode="register">Crear cuenta</button>
+        </div>
+        <input id="authEmail" placeholder="Correo" value="${esc(state.authEmail||"")}" autocomplete="email" inputmode="email">
+        <input id="authPassword" type="password" placeholder="Contraseña (mín. 6 caracteres)" value="${esc(state.authPassword||"")}" autocomplete="${state.authMode==='login'?'current-password':'new-password'}">
+        ${state.authError ? `<div class="red" style="font-size:12px;">${esc(state.authError)}</div>` : ""}
+        ${state.authInfo ? `<div class="green" style="font-size:12px;">${esc(state.authInfo)}</div>` : ""}
+        <button class="btn btn-primary" data-act="auth-submit" ${state.authBusy?"disabled":""}>${state.authBusy ? "…" : (state.authMode==='login'?"Entrar":"Crear cuenta")}</button>
+        ${state.authMode==='login' ? `<button class="btn btn-ghost" style="font-size:12px;" data-act="auth-forgot" ${state.authBusy?"disabled":""}>¿Olvidaste tu contraseña?</button>` : ""}
+      </div>
+      <div class="muted" style="font-size:11px; text-align:center; margin-top:16px;">Si pierdes o cambias de teléfono, solo entra con esta misma cuenta y recuperas todo.</div>
+    </div>`;
+}
+
+function renderRateBar() {
+  const b = state.bcv;
+  if (state.rateEditing) {
+    return `
+      <div class="ratebar">
+        <div class="gap2" style="align-items:center;">
+          <input id="rateInput" inputmode="decimal" placeholder="Ej. 108.45" value="${b.rate ? esc(b.rate) : ""}">
+          <button class="icon-btn" style="background:var(--green); color:var(--bg); flex:0 0 auto;" data-act="save-rate">✓</button>
+          <button class="icon-btn" style="flex:0 0 auto;" data-act="cancel-rate">✕</button>
+        </div>
+      </div>`;
+  }
+  return `
+    <div class="ratebar">
+      <div class="row">
+        <div>
+          <div class="label">Tasa oficial BCV</div>
+          <div class="value green">${b.rate ? fmtBs(b.rate) : "sin definir"} <span class="muted" style="font-size:11px; font-family:inherit;">/ $1</span></div>
+          ${b.fetchedAt ? `<div class="sub">${esc(b.fuente || (b.source === "auto" ? "auto" : "manual"))} · ${fmtDate(b.fetchedAt)}</div>` : ""}
+        </div>
+        <div class="gap2" style="flex:0 0 auto;">
+          <button class="icon-btn" data-act="edit-rate">✎</button>
+          <button class="icon-btn" data-act="refresh-rate">${state.rateFetching ? "⟳…" : "⟳"}</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function renderNav() {
+  const tabs = [ ["pos","🛒","Vender"], ["ventasdia","📈","Ventas"], ["cash","💰","Caja"], ["clients","👥","Clientes"], ["inventory","📦","Inventario"] ];
+  return `<nav class="tabbar">${tabs.map(([id,ic,lb]) =>
+    `<button data-act="tab" data-tab="${id}" class="${state.tab===id?"active":""}"><span class="ic">${ic}</span>${lb}</button>`
+  ).join("")}</nav>`;
+}
+
+function renderTab() {
+  if (state.tab === "pos") return renderPos();
+  if (state.tab === "ventasdia") return renderVentasDia();
+  if (state.tab === "cash") return renderCash();
+  if (state.tab === "clients") return renderClients();
+  if (state.tab === "inventory") return renderInventory();
+  return "";
+}
+
+/* ---------------- Ventas del día ---------------- */
+function renderVentasDia() {
+  const today = new Date().toDateString();
+  const todays = state.sales.filter((s) => new Date(s.date).toDateString() === today).slice().reverse(); // orden cronológico
+  let running = 0;
+  const rows = todays.map((s) => {
+    running += s.totalUSD;
+    const time = new Date(s.date).toLocaleTimeString("es-VE", { hour: "2-digit", minute: "2-digit" });
+    return `
+      <div class="list-item">
+        <div class="row">
+          <div>
+            <div style="font-size:13px;">${time} · ${esc(s.clientName || "Cliente ocasional")}</div>
+            <div class="muted" style="font-size:11px; margin-top:2px;">${esc(methodLabel(s.method))}</div>
+          </div>
+          <div style="text-align:right;">
+            <div class="mono" style="font-size:14px; font-weight:600;">${fmtUSD(s.totalUSD)}</div>
+            <div class="muted" style="font-size:10px;">acum. ${fmtUSD(running)}</div>
+          </div>
+        </div>
+        <div class="gap2" style="margin-top:6px; gap:6px;">
+          <button class="icon-btn" style="padding:4px 8px; font-size:11px; background:none; color:var(--muted2);" data-act="share-receipt" data-id="${s.id}">📲 Compartir</button>
+          <button class="icon-btn" style="padding:4px 8px; font-size:11px; background:none; color:var(--muted);" data-act="void-sale-start" data-id="${s.id}">Deshacer</button>
+        </div>
+        ${state.voidSaleId === s.id ? `
+          <div class="card stack" style="margin-top:8px; border:1px solid var(--redBg);">
+            <div style="font-weight:600; font-size:13px;">¿Deshacer esta venta?</div>
+            <div class="muted" style="font-size:12px;">Se devuelve el stock y, si fue a crédito, se elimina la deuda generada.</div>
+            <div class="gap2">
+              <button class="btn btn-danger-ghost" data-act="void-sale-confirm" data-id="${s.id}">Sí, deshacer</button>
+              <button class="btn btn-ghost" style="flex:0 0 auto; padding:10px 16px;" data-act="void-sale-cancel">Cancelar</button>
+            </div>
+          </div>` : ""}
+      </div>`;
+  }).join("");
+
+  const total = todays.reduce((a, s) => a + s.totalUSD, 0);
+  const byMethod = {};
+  todays.forEach((s) => { byMethod[s.method] = (byMethod[s.method] || 0) + s.totalUSD; });
+
+  return `
+    <div class="row" style="margin-bottom:12px;">
+      <h1>Ventas de hoy</h1>
+      ${todays.length>0 ? `<button data-act="export-sales-csv" class="muted" style="background:none; font-size:12px; text-decoration:underline;">Exportar CSV</button>` : ""}
+    </div>
+
+    <div class="card" style="margin-bottom:16px; text-align:center;">
+      <div class="label">Total del día</div>
+      <div class="mono green" style="font-size:30px; font-weight:700;">${fmtUSD(total)}</div>
+      <div class="muted" style="font-size:12px; margin-top:4px;">${todays.length} venta${todays.length===1?"":"s"}</div>
+      ${todays.length>0 ? `<div class="muted" style="font-size:11px; margin-top:8px; padding-top:8px; border-top:1px solid var(--border);">${PAYMENT_METHODS.filter((m)=>byMethod[m.id]).map((m)=>`${m.label}: ${fmtUSD(byMethod[m.id])}`).join(" · ")}</div>` : ""}
+    </div>
+
+    ${todays.length === 0 ? `<div class="empty">Aún no hay ventas registradas hoy.</div>` : rows}
+
+    ${todays.length > 0 ? `
+      <div class="card" style="margin-top:12px; text-align:center; border:1px solid var(--greenBorder);">
+        <div class="label">Total acumulado hasta ahora</div>
+        <div class="mono green" style="font-size:22px; font-weight:700;">${fmtUSD(total)}</div>
+      </div>` : ""}
+  `;
+}
+
+/* ---------------- POS ---------------- */
+function renderPos() {
+  if (state.posReceipt) {
+    const r = state.posReceipt;
+    return `
+      <div class="card" style="text-align:center; background:var(--greenBg); border-color:var(--greenBorder); margin-bottom:16px;">
+        <div style="font-size:28px;">🧾</div>
+        <div class="muted2" style="font-size:13px; margin-top:4px;">Venta registrada</div>
+        <div class="mono green" style="font-size:26px; font-weight:700; margin-top:4px;">${fmtUSD(r.totalUSD)}</div>
+        ${r.rate > 0 ? `<div class="mono muted" style="font-size:12px;">${fmtBs(r.totalBs)}</div>` : ""}
+      </div>
+      <div class="card stack" style="margin-bottom:16px;">
+        ${r.items.map((it) => `<div class="row" style="font-size:14px;"><span class="muted2">${it.qty} × ${esc(it.name)}</span><span class="mono">${fmtUSD(it.price * it.qty)}</span></div>`).join("")}
+        <div class="row" style="border-top:1px solid var(--border); padding-top:8px; margin-top:4px; font-size:12px;" class="muted">
+          <span class="muted">${methodLabel(r.method)}</span><span class="muted">${esc(r.clientName)}</span>
+        </div>
+      </div>
+      <button class="btn" style="width:100%; padding:13px; margin-bottom:8px; background:#25D366; color:#fff; font-weight:600;" data-act="share-receipt" data-id="${r.id}">📲 Compartir por WhatsApp</button>
+      <button class="btn btn-primary" style="width:100%; padding:14px;" data-act="new-sale">Nueva venta</button>
+      <button class="btn btn-ghost" style="width:100%; padding:10px; margin-top:8px; font-size:12px;" data-act="void-sale-start" data-id="${r.id}">Deshacer esta venta</button>
+      ${state.voidSaleId === r.id ? `
+        <div class="card stack" style="margin-top:8px; border:1px solid var(--redBg);">
+          <div style="font-weight:600; font-size:13px;">¿Deshacer esta venta?</div>
+          <div class="muted" style="font-size:12px;">Se devuelve el stock y, si fue a crédito, se elimina la deuda generada.</div>
+          <div class="gap2">
+            <button class="btn btn-danger-ghost" data-act="void-sale-confirm" data-id="${r.id}">Sí, deshacer</button>
+            <button class="btn btn-ghost" style="flex:0 0 auto; padding:10px 16px;" data-act="void-sale-cancel">Cancelar</button>
+          </div>
+        </div>` : ""}
+    `;
+  }
+
+  const sessionOpen = !!(state.session && state.session.open);
+  const cart = state.posCart;
+  const total = cart.reduce((a, i) => a + i.price * i.qty, 0);
+  const totalBs = total * (state.bcv.rate || 0);
+  const filtered = state.products.filter((p) => p.name.toLowerCase().includes(state.posSearch.toLowerCase()));
+
+  return `
+    <h1 style="margin-bottom:4px;">Vender</h1>
+    ${!sessionOpen ? `<div class="badge-warn">No hay caja abierta. La venta se registrará igual, pero no sumará al efectivo de caja.</div>` : `<div style="height:8px;"></div>`}
+
+    ${cart.length > 0 ? `
+      <div class="card" style="margin-bottom:12px;">
+        <div class="label" style="margin-bottom:8px;">Carrito</div>
+        <div class="stack" style="margin-bottom:12px;">
+          ${cart.map((i) => `
+            <div class="row">
+              <div style="min-width:0; flex:1;">
+                <div style="font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(i.name)}</div>
+                <div class="mono muted" style="font-size:11px;">${fmtUSD(i.price)} c/u</div>
+              </div>
+              <div class="gap2" style="flex:0 0 auto; align-items:center; gap:6px;">
+                <button class="icon-btn" style="padding:5px;" data-act="cart-qty" data-id="${i.productId}" data-d="-1">−</button>
+                <span class="mono" style="width:22px; text-align:center; font-size:14px;">${i.qty}</span>
+                <button class="icon-btn" style="padding:5px;" data-act="cart-qty" data-id="${i.productId}" data-d="1">+</button>
+                <button class="icon-btn" style="padding:5px; background:none; color:var(--muted);" data-act="cart-remove" data-id="${i.productId}">✕</button>
+              </div>
+            </div>`).join("")}
+        </div>
+        <div class="row" style="border-top:1px solid var(--border); padding-top:8px;">
+          <div class="muted" style="font-size:12px;">Total</div>
+          <div style="text-align:right;">
+            <div class="mono green" style="font-size:20px; font-weight:700;">${fmtUSD(total)}</div>
+            ${state.bcv.rate > 0 ? `<div class="mono muted" style="font-size:11px;">${fmtBs(totalBs)}</div>` : ""}
+          </div>
+        </div>
+        <div class="stack" style="margin-top:12px;">
+          <select id="posClient">
+            <option value="">Cliente ocasional</option>
+            ${state.clients.map((c) => `<option value="${c.id}" ${state.posClientId===c.id?"selected":""}>${esc(c.name)}</option>`).join("")}
+          </select>
+          <div class="grid2">
+            ${PAYMENT_METHODS.map((m) => `
+              <button class="pill ${state.posMethod===m.id?"active":""}" data-act="pos-method" data-m="${m.id}" ${m.id==="credito" && !state.posClientId ? "disabled":""}>${m.label}</button>
+            `).join("")}
+          </div>
+          ${state.posMethod==="credito" && !state.posClientId ? `<div class="amber" style="font-size:11px;">Selecciona un cliente para vender a crédito.</div>` : ""}
+          <input id="posNote" placeholder="Nota (opcional)" value="${esc(state.posNote)}">
+          <button class="btn btn-primary" style="width:100%; padding:13px; font-weight:600;" data-act="pos-confirm" ${state.posMethod==="credito" && !state.posClientId ? "disabled":""}>Cobrar ${fmtUSD(total)}</button>
+        </div>
+      </div>
+    ` : ""}
+
+    <div class="searchwrap">
+      <span class="sic">🔍</span>
+      <input id="posSearch" placeholder="Buscar producto..." value="${esc(state.posSearch)}">
+    </div>
+
+    ${filtered.length === 0 ? `<div class="empty">${state.products.length===0 ? "Agrega productos en Inventario primero." : "Sin resultados."}</div>` : `
+      <div class="grid2">
+        ${filtered.map((p) => `
+          <button class="prodbtn" data-act="add-cart" data-id="${p.id}" ${p.qty<=0?"disabled":""} style="${p.qty<=0?"opacity:.5;":""}">
+            <div style="font-size:14px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(p.name)}</div>
+            <div class="muted" style="font-size:11px; margin-top:2px;">${p.qty<=0 ? '<span class="red">sin stock</span>' : p.qty<=LOW_STOCK_THRESHOLD ? `<span class="amber">⚠️ quedan ${p.qty}</span>` : p.qty + " uds"}</div>
+            <div class="mono green" style="font-size:14px; margin-top:4px;">${fmtUSD(p.price)}</div>
+          </button>
+        `).join("")}
+      </div>
+    `}
+  `;
+}
+
+/* ---------------- CAJA ---------------- */
+function renderCash() {
+  if (state.cashShowHistory) {
+    return `
+      <button class="btn btn-ghost" style="margin-bottom:12px;" data-act="cash-history-back">← Caja</button>
+      <h1 style="margin-bottom:12px;">Historial de cierres</h1>
+      ${state.cashHistory.length === 0 ? `<div class="empty">Sin cierres registrados.</div>` : state.cashHistory.map((h) => {
+        const t = computeTotals(h);
+        const expected = t.efectivoUsd + t.efectivoBsUsd;
+        const counted = (h.countedUSD || 0) + (state.bcv.rate > 0 ? (h.countedBs || 0) / state.bcv.rate : 0);
+        const diff = counted - expected;
+        return `
+          <div class="list-item">
+            <div class="muted" style="font-size:12px; margin-bottom:4px;">${fmtDateTime(h.openedAt)} → ${fmtDateTime(h.closedAt)}</div>
+            <div class="row" style="font-size:14px;">
+              <span class="muted2">Ventas: ${fmtUSD(t.ventasTotal)}</span>
+              <span class="mono ${Math.abs(diff) < 0.01 ? "green" : "amber"}">${diff >= 0 ? "+" : ""}${fmtUSD(diff)} diff.</span>
+            </div>
+          </div>`;
+      }).join("")}
+    `;
+  }
+
+  const isOpen = state.session && state.session.open;
+  const totals = isOpen ? computeTotals(state.session) : null;
+
+  return `
+    <div class="row" style="margin-bottom:12px;">
+      <h1>Caja</h1>
+      <button data-act="cash-history" class="muted" style="background:none; font-size:12px; text-decoration:underline;">Historial</button>
+    </div>
+
+    ${!isOpen && !state.cashOpening ? `
+      <div class="card" style="text-align:center; padding:28px 16px;">
+        <div style="font-size:24px;">🔒</div>
+        <div class="muted2" style="font-size:14px; margin:8px 0 16px;">La caja está cerrada</div>
+        <button class="btn btn-primary" data-act="cash-open-start">Abrir caja</button>
+      </div>` : ""}
+
+    ${!isOpen && state.cashOpening ? `
+      <div class="card stack">
+        <div class="muted2" style="font-size:12px;">Monto inicial en efectivo</div>
+        <input id="openUSD" inputmode="decimal" placeholder="0.00 ($)" value="${esc(state.openUSD||"")}">
+        <input id="openBs" inputmode="decimal" placeholder="0.00 (Bs)" value="${esc(state.openBs||"")}">
+        <div class="gap2">
+          <button class="btn btn-primary" data-act="cash-open-confirm">🔓 Abrir</button>
+          <button class="btn btn-ghost" data-act="cash-open-cancel" style="flex:0 0 auto; padding:10px 16px;">Cancelar</button>
+        </div>
+      </div>` : ""}
+
+    ${isOpen && !state.cashClosing ? `
+      <div class="card" style="margin-bottom:12px;">
+        <div class="label">Efectivo esperado en caja</div>
+        <div class="mono green" style="font-size:24px; font-weight:700;">${fmtUSD(totals.efectivoUsd + totals.efectivoBsUsd)}</div>
+        <div class="muted" style="font-size:11px; margin-top:4px;">${fmtUSD(totals.efectivoUsd)} en $ · ${fmtBs(totals.efectivoBsUsd * (state.bcv.rate||0))} en Bs</div>
+        <div class="grid3" style="margin-top:12px; text-align:center;">
+          <div><div class="muted" style="font-size:10px;">Ventas</div><div class="mono" style="font-size:14px;">${fmtUSD(totals.ventasTotal)}</div></div>
+          <div><div class="muted" style="font-size:10px;">Ingresos</div><div class="mono green" style="font-size:14px;">${fmtUSD(totals.ingresos)}</div></div>
+          <div><div class="muted" style="font-size:10px;">Egresos</div><div class="mono amber" style="font-size:14px;">${fmtUSD(totals.egresos)}</div></div>
+        </div>
+        ${(totals.otros.pago_movil>0||totals.otros.transferencia>0) ? `<div class="muted" style="font-size:11px; margin-top:8px; padding-top:8px; border-top:1px solid var(--border);">Pago móvil: ${fmtUSD(totals.otros.pago_movil)} · Transferencia: ${fmtUSD(totals.otros.transferencia)}</div>` : ""}
+      </div>
+
+      <div class="grid2" style="margin-bottom:12px;">
+        <button class="btn" style="background:var(--greenBg); color:var(--green); border:1px solid var(--greenBorder);" data-act="mov-start" data-t="ingreso">↑ Ingreso</button>
+        <button class="btn" style="background:var(--amberBg); color:var(--amber); border:1px solid var(--amberBorder);" data-act="mov-start" data-t="egreso">↓ Egreso</button>
+      </div>
+
+      ${state.movType ? `
+        <div class="card stack" style="margin-bottom:12px;">
+          <input id="movAmount" inputmode="decimal" placeholder="Monto ($)" value="${esc(state.movAmount||"")}">
+          <select id="movMethod">
+            ${PAYMENT_METHODS.filter((m)=>m.id!=="credito").map((m)=>`<option value="${m.id}" ${state.movMethod===m.id?"selected":""}>${m.label}</option>`).join("")}
+          </select>
+          <input id="movNote" placeholder="Motivo" value="${esc(state.movNote||"")}">
+          <div class="gap2">
+            <button class="btn btn-primary" data-act="mov-save">Guardar</button>
+            <button class="btn btn-ghost" style="flex:0 0 auto; padding:10px 16px;" data-act="mov-cancel">Cancelar</button>
+          </div>
+        </div>` : ""}
+
+      <button class="btn btn-danger-ghost" style="width:100%; margin-bottom:16px;" data-act="cash-close-start">🔒 Cerrar caja</button>
+
+      <div class="label" style="margin-bottom:8px;">Movimientos</div>
+      ${state.session.movements.length===0 ? `<div class="empty" style="padding:24px 0;">Sin movimientos aún.</div>` : state.session.movements.map((m) => `
+        <div class="list-item" style="padding:10px 12px; margin-bottom:6px;">
+          <div class="row">
+            <div>
+              <div style="font-size:14px;">${m.type==="venta"?"Venta":m.type==="ingreso"?"Ingreso":"Egreso"} <span class="muted" style="font-size:11px; margin-left:4px;">${methodLabel(m.method)}</span></div>
+              <div class="muted" style="font-size:10px;">${fmtDateTime(m.date)}${m.note?` · ${esc(m.note)}`:""}</div>
+            </div>
+            <div class="mono ${m.type==="egreso"?"amber":"green"}" style="font-size:14px;">${m.type==="egreso"?"-":"+"}${fmtUSD(m.amountUSD)}</div>
+          </div>
+        </div>
+      `).join("")}
+    ` : ""}
+
+    ${isOpen && state.cashClosing ? `
+      <div class="card stack">
+        <div style="font-size:14px; font-weight:500;">Cierre de caja</div>
+        <div class="muted" style="font-size:12px;">Esperado: ${fmtUSD(totals.efectivoUsd + totals.efectivoBsUsd)}</div>
+        <div class="muted2" style="font-size:12px;">Efectivo contado</div>
+        <input id="countedUSD" inputmode="decimal" placeholder="0.00 ($)" value="${esc(state.countedUSD||"")}">
+        <input id="countedBs" inputmode="decimal" placeholder="0.00 (Bs)" value="${esc(state.countedBs||"")}">
+        <div class="gap2">
+          <button class="btn btn-primary" data-act="cash-close-confirm">Confirmar cierre</button>
+          <button class="btn btn-ghost" style="flex:0 0 auto; padding:10px 16px;" data-act="cash-close-cancel">Cancelar</button>
+        </div>
+      </div>` : ""}
+  `;
+}
+
+/* ---------------- CLIENTES ---------------- */
+function renderClients() {
+  if (state.clientOpenId) {
+    const c = state.clients.find((x) => x.id === state.clientOpenId);
+    if (c) return renderClientDetail(c);
+    state.clientOpenId = null;
+  }
+  const filtered = state.clients.filter((c) => c.name.toLowerCase().includes(state.clSearch.toLowerCase()));
+  const totalDebt = state.clients.reduce((a, c) => a + Math.max(0, clientBalance(c)), 0);
+
+  return `
+    <div class="row" style="margin-bottom:12px;">
+      <div>
+        <h1>Clientes</h1>
+        <div class="muted" style="font-size:12px;">Deuda total: <span class="mono amber">${fmtUSD(totalDebt)}</span></div>
+      </div>
+      <button class="btn btn-primary" style="border-radius:999px; padding:10px;" data-act="cl-add-start">+</button>
+    </div>
+
+    <div class="searchwrap">
+      <span class="sic">🔍</span>
+      <input id="clSearch" placeholder="Buscar cliente..." value="${esc(state.clSearch)}">
+    </div>
+
+    ${state.clAdding ? `
+      <div class="card stack" style="margin-bottom:12px;">
+        <div class="muted2" style="font-size:12px;">${state.clEditId?"Editar cliente":"Nuevo cliente"}</div>
+        <input id="clName" placeholder="Nombre del cliente" value="${esc(state.clName||"")}">
+        <input id="clPhone" placeholder="Teléfono (opcional)" value="${esc(state.clPhone||"")}">
+        <div class="gap2">
+          <button class="btn btn-primary" data-act="cl-add-save">Guardar</button>
+          <button class="btn btn-ghost" style="flex:0 0 auto; padding:10px 16px;" data-act="cl-add-cancel">Cancelar</button>
+        </div>
+      </div>` : ""}
+
+    ${filtered.length===0 && !state.clAdding ? `<div class="empty">${state.clients.length===0?"Aún no hay clientes. Toca + para agregar uno.":"Sin resultados."}</div>` : ""}
+
+    ${filtered.map((c) => {
+      const bal = clientBalance(c);
+      return `
+        <div class="list-item">
+          <div class="row">
+            <div class="tap" style="flex:1; min-width:0;" data-act="cl-open" data-id="${c.id}">
+              <div style="font-size:14px; font-weight:500;">${esc(c.name)}</div>
+              ${c.phone ? `<div class="muted" style="font-size:11px; margin-top:2px;">📞 ${esc(c.phone)}</div>` : ""}
+            </div>
+            <div style="text-align:right; flex:0 0 auto;">
+              <div class="mono ${bal>0?"amber":bal<0?"green":"muted"}" style="font-size:14px; font-weight:600;">${fmtUSD(Math.abs(bal))}</div>
+              <div class="muted" style="font-size:10px;">${bal>HIGH_BALANCE_THRESHOLD?'<span class="red">⚠️ debe</span>':bal>0?"debe":bal<0?"a favor":"al día"}</div>
+            </div>
+            <div class="gap2" style="flex:0 0 auto; gap:4px; margin-left:6px;">
+              <button class="icon-btn" style="padding:6px; background:none; color:var(--muted2);" data-act="cl-edit-start" data-id="${c.id}">✎</button>
+              <button class="icon-btn" style="padding:6px; background:none; color:var(--muted);" data-act="cl-delete-start" data-id="${c.id}">🗑</button>
+            </div>
+          </div>
+        </div>`;
+    }).join("")}
+
+    ${state.clDeleteId ? (() => {
+      const c = state.clients.find((x) => x.id === state.clDeleteId);
+      if (!c) return "";
+      return `
+      <div class="card stack" style="margin-top:12px; border:1px solid var(--redBg);">
+        <div style="font-weight:600;">¿Borrar a ${esc(c.name)}?</div>
+        <div class="muted" style="font-size:12px;">Se eliminará su historial de deudas y abonos. Esta acción no se puede deshacer.</div>
+        <div class="gap2">
+          <button class="btn btn-danger-ghost" data-act="cl-delete-confirm" data-id="${c.id}">Sí, borrar</button>
+          <button class="btn btn-ghost" style="flex:0 0 auto; padding:10px 16px;" data-act="cl-delete-cancel">Cancelar</button>
+        </div>
+      </div>`;
+    })() : ""}
+  `;
+}
+
+function renderClientDetail(c) {
+  const balance = clientBalance(c);
+  return `
+    <div class="row" style="margin-bottom:12px;">
+      <button class="btn btn-ghost" style="flex:0 0 auto;" data-act="cl-back">← Clientes</button>
+      <div class="gap2" style="flex:0 0 auto; gap:4px;">
+        <button class="icon-btn" style="padding:6px; background:none; color:var(--muted2);" data-act="cl-edit-start" data-id="${c.id}">✎</button>
+        <button class="icon-btn" style="padding:6px; background:none; color:var(--muted);" data-act="cl-delete-start" data-id="${c.id}">🗑</button>
+      </div>
+    </div>
+
+    ${state.clDeleteId === c.id ? `
+      <div class="card stack" style="margin-bottom:16px; border:1px solid var(--redBg);">
+        <div style="font-weight:600;">¿Borrar a ${esc(c.name)}?</div>
+        <div class="muted" style="font-size:12px;">Se eliminará su historial de deudas y abonos. Esta acción no se puede deshacer.</div>
+        <div class="gap2">
+          <button class="btn btn-danger-ghost" data-act="cl-delete-confirm" data-id="${c.id}">Sí, borrar</button>
+          <button class="btn btn-ghost" style="flex:0 0 auto; padding:10px 16px;" data-act="cl-delete-cancel">Cancelar</button>
+        </div>
+      </div>` : ""}
+
+    <div class="card" style="margin-bottom:16px;">
+      <div style="font-size:18px; font-weight:600;">${esc(c.name)}</div>
+      ${c.phone ? `<div class="muted" style="font-size:12px; margin-top:2px;">📞 ${esc(c.phone)}</div>` : ""}
+      <div class="row" style="margin-top:12px; align-items:flex-end;">
+        <div>
+          <div class="muted" style="font-size:10px; text-transform:uppercase;">Saldo</div>
+          <div class="mono ${balance>0?"amber":balance<0?"green":"muted2"}" style="font-size:24px; font-weight:700;">${fmtUSD(Math.abs(balance))}</div>
+          ${state.bcv.rate>0 ? `<div class="mono muted" style="font-size:11px;">${fmtBs(Math.abs(balance)*state.bcv.rate)}</div>` : ""}
+        </div>
+        <div class="muted" style="font-size:12px;">${balance>0?"debe":balance<0?"a favor del cliente":"sin saldo pendiente"}</div>
+      </div>
+      ${balance > HIGH_BALANCE_THRESHOLD ? `<div class="red" style="font-size:12px; margin-top:8px; padding-top:8px; border-top:1px solid var(--border);">⚠️ Saldo alto — considera pedir un abono.</div>` : ""}
+    </div>
+
+    <div class="grid2" style="margin-bottom:16px;">
+      <button class="btn" style="background:var(--amberBg); color:var(--amber); border:1px solid var(--amberBorder);" data-act="tx-start" data-t="debe">↑ Debe</button>
+      <button class="btn" style="background:var(--greenBg); color:var(--green); border:1px solid var(--greenBorder);" data-act="tx-start" data-t="abona">↓ Abona</button>
+    </div>
+
+    ${state.txType ? `
+      <div class="card stack" style="margin-bottom:16px;">
+        <div class="muted2" style="font-size:12px;">${state.txType==="debe"?"Nueva deuda (USD)":"Nuevo abono (USD)"}</div>
+        <input id="txAmount" inputmode="decimal" placeholder="0.00" value="${esc(state.txAmount||"")}">
+        ${state.txAmount && state.bcv.rate>0 ? `<div class="mono muted" style="font-size:11px;">≈ ${fmtBs(parseFloat(String(state.txAmount).replace(",","."))*state.bcv.rate||0)}</div>` : ""}
+        <input id="txNote" placeholder="Nota (opcional)" value="${esc(state.txNote||"")}">
+        <div class="gap2">
+          <button class="btn btn-primary" data-act="tx-save">Guardar</button>
+          <button class="btn btn-ghost" style="flex:0 0 auto; padding:10px 16px;" data-act="tx-cancel">Cancelar</button>
+        </div>
+      </div>` : ""}
+
+    <div class="label" style="margin-bottom:8px;">Historial de deuda</div>
+    ${c.transactions.length===0 ? `<div class="empty">Sin movimientos todavía.</div>` : c.transactions.map((t) => `
+      <div class="list-item" style="padding:10px 12px;">
+        <div class="row">
+          <div style="display:flex; gap:8px; align-items:flex-start;">
+            <span class="${t.type==='debe'?'badge-tx-debe':'badge-tx-abona'}">${t.type==='debe'?'↑':'↓'}</span>
+            <div>
+              <div class="mono" style="font-size:14px; font-weight:500;">${fmtUSD(t.amountUSD)}</div>
+              <div class="muted" style="font-size:10px;">${fmtDate(t.date)}${t.note?` · ${esc(t.note)}`:""}${t.rate?` · a ${t.rate.toFixed(2)}`:""}</div>
+            </div>
+          </div>
+          <button class="icon-btn" style="background:none; color:var(--muted); padding:4px;" data-act="tx-delete" data-id="${t.id}">🗑</button>
+        </div>
+      </div>
+    `).join("")}
+
+    ${(() => {
+      const purchases = state.sales.filter((s) => s.clientId === c.id);
+      if (!purchases.length) return "";
+      const totalCompras = purchases.reduce((a, s) => a + s.totalUSD, 0);
+      return `
+        <div class="label" style="margin:20px 0 8px;">Compras (${purchases.length}) · <span class="mono">${fmtUSD(totalCompras)}</span> en total</div>
+        ${purchases.map((s) => `
+          <div class="list-item" style="padding:10px 12px;">
+            <div class="row" style="align-items:flex-start;">
+              <div style="min-width:0; flex:1;">
+                <div class="muted" style="font-size:10px;">${fmtDate(s.date)} · ${methodLabel(s.method)}</div>
+                <div style="font-size:12px; margin-top:2px;">${s.items.map((it) => `${it.qty}× ${esc(it.name)}`).join(", ")}</div>
+              </div>
+              <div class="mono" style="font-size:14px; font-weight:600; flex:0 0 auto;">${fmtUSD(s.totalUSD)}</div>
+            </div>
+          </div>
+        `).join("")}`;
+    })()}
+  `;
+}
+
+/* ---------------- INVENTARIO ---------------- */
+function renderInventory() {
+  const totalValue = state.products.reduce((a, p) => a + p.qty * p.price, 0);
+  return `
+    <div class="row" style="margin-bottom:12px;">
+      <div>
+        <h1>Inventario</h1>
+        <div class="muted" style="font-size:12px;">Valor total: <span class="mono green">${fmtUSD(totalValue)}</span></div>
+      </div>
+      <button class="btn btn-primary" style="border-radius:999px; padding:10px;" data-act="inv-add-start">+</button>
+    </div>
+
+    ${state.invAdding ? `
+      <div class="card stack" style="margin-bottom:12px;">
+        <input id="pName" placeholder="Nombre del producto" value="${esc(state.pName||"")}">
+        <div class="grid3">
+          <input id="pQty" inputmode="decimal" placeholder="Cant." value="${esc(state.pQty||"")}">
+          <input id="pCost" inputmode="decimal" placeholder="Costo $" value="${esc(state.pCost||"")}">
+          <input id="pPrice" inputmode="decimal" placeholder="Precio $" value="${esc(state.pPrice||"")}">
+        </div>
+        <div class="gap2">
+          <button class="btn btn-primary" data-act="inv-save">Guardar</button>
+          <button class="btn btn-ghost" style="flex:0 0 auto; padding:10px 16px;" data-act="inv-cancel">Cancelar</button>
+        </div>
+      </div>` : ""}
+
+    ${state.products.length===0 && !state.invAdding ? `<div class="empty">Aún no hay productos. Toca + para agregar uno.</div>` : ""}
+
+    ${(() => {
+      const low = state.products.filter((p) => p.qty > 0 && p.qty <= LOW_STOCK_THRESHOLD);
+      const out = state.products.filter((p) => p.qty <= 0);
+      if (!low.length && !out.length) return "";
+      return `
+        <div class="card" style="margin-bottom:12px; border:1px solid var(--amberBorder); background:var(--amberBg);">
+          <div class="amber" style="font-size:13px; font-weight:600;">⚠️ Alerta de inventario</div>
+          <div class="muted" style="font-size:12px; margin-top:4px;">
+            ${low.length ? `${low.length} producto${low.length===1?"":"s"} con stock bajo` : ""}${low.length && out.length ? " · " : ""}${out.length ? `${out.length} sin stock` : ""}
+          </div>
+        </div>`;
+    })()}
+
+    ${state.products.map((p) => `
+      <div class="list-item">
+        <div class="row">
+          <div style="min-width:0; flex:1;">
+            <div style="font-size:14px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(p.name)} ${p.qty<=0?'<span class="red" style="font-size:11px;">⛔ sin stock</span>':p.qty<=LOW_STOCK_THRESHOLD?'<span class="amber" style="font-size:11px;">⚠️ bajo</span>':""}</div>
+            <div class="muted" style="font-size:11px; margin-top:2px;">
+              <span class="${p.qty<=0?'red':p.qty<=LOW_STOCK_THRESHOLD?'amber':''}">${p.qty} uds</span> · costo ${fmtUSD(p.cost)} · venta <span class="green">${fmtUSD(p.price)}</span>
+            </div>
+          </div>
+          <div class="gap2" style="flex:0 0 auto; gap:4px;">
+            <button class="icon-btn" style="padding:6px; background:none; color:var(--muted2);" data-act="inv-edit" data-id="${p.id}">✎</button>
+            <button class="icon-btn" style="padding:6px; background:none; color:var(--muted);" data-act="inv-delete" data-id="${p.id}">🗑</button>
+          </div>
+        </div>
+      </div>
+    `).join("")}
+  `;
+}
+
+/* ---------------- eventos ---------------- */
+function bindEvents() {
+  const app = document.getElementById("app");
+
+  app.querySelectorAll("[data-act]").forEach((el) => {
+    el.addEventListener("click", async (e) => {
+      const act = el.dataset.act;
+      if (act === "tab") { state.tab = el.dataset.tab; state.posReceipt=null; render(); return; }
+
+      // cuenta / autenticación
+      if (act === "auth-mode") { state.authMode = el.dataset.mode; state.authError=""; state.authInfo=""; render(); return; }
+      if (act === "auth-submit") {
+        const email = (document.getElementById("authEmail").value||"").trim();
+        const password = document.getElementById("authPassword").value||"";
+        state.authEmail = email; state.authPassword = password;
+        state.authInfo = "";
+        if (!email || password.length < 6) { state.authError = "Ingresa un correo válido y una contraseña de al menos 6 caracteres."; render(); return; }
+        state.authBusy = true; state.authError = ""; render();
+        try {
+          if (state.authMode === "login") await auth.signInWithEmailAndPassword(email, password);
+          else await auth.createUserWithEmailAndPassword(email, password);
+          // onAuthStateChanged se encarga de sincronizar y volver a renderizar
+        } catch (e) {
+          state.authBusy = false; state.authError = authErrorMessage(e); render();
+        }
+        return;
+      }
+      if (act === "auth-forgot") {
+        const email = (document.getElementById("authEmail").value||"").trim();
+        state.authEmail = email; state.authError = ""; state.authInfo = "";
+        if (!email) { state.authError = "Escribe tu correo arriba y vuelve a tocar el enlace."; render(); return; }
+        state.authBusy = true; render();
+        try {
+          await auth.sendPasswordResetEmail(email);
+          state.authInfo = "Te enviamos un correo a " + email + " con un enlace para crear una nueva contraseña. Revisa también spam.";
+        } catch (e) {
+          state.authError = authErrorMessage(e);
+        }
+        state.authBusy = false; render(); return;
+      }
+      if (act === "auth-logout") { auth.signOut(); return; }
+      if (act === "toggle-theme") {
+        const next = document.documentElement.getAttribute("data-theme") === "light" ? "dark" : "light";
+        document.documentElement.setAttribute("data-theme", next);
+        try { localStorage.setItem("inv_theme", next); } catch (e) {}
+        const meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) meta.setAttribute("content", next === "light" ? "#F4F5F7" : "#0E1013");
+        if (state.authUser) renderAccountBarOnly(); else render();
+        return;
+      }
+
+      // tasa
+      if (act === "edit-rate") { state.rateEditing = true; render(); document.getElementById("rateInput")?.focus(); return; }
+      if (act === "cancel-rate") { state.rateEditing = false; render(); return; }
+      if (act === "save-rate") {
+        const v = parseFloat((document.getElementById("rateInput").value||"").replace(",", "."));
+        if (v > 0) { state.bcv = { rate: v, source: "manual", fetchedAt: new Date().toISOString(), fuente: "Ingresada manualmente" }; persist(["bcv"]); state.rateEditing=false; }
+        render(); return;
+      }
+      if (act === "refresh-rate") {
+        state.rateFetching = true; render();
+        const auto = await fetchBcvRate();
+        state.rateFetching = false;
+        if (auto) { state.bcv = auto; persist(["bcv"]); }
+        else { state.rateEditing = true; }
+        render(); return;
+      }
+
+      // POS
+      if (act === "add-cart") {
+        if (el.disabled) return;
+        const id = el.dataset.id;
+        const p = state.products.find((x) => x.id === id);
+        if (!p || p.qty <= 0) return;
+        const found = state.posCart.find((i) => i.productId === id);
+        if (found) {
+          if (found.qty >= p.qty) { alert(`Solo quedan ${p.qty} unidades de ${p.name}.`); return; }
+          found.qty += 1;
+        } else {
+          state.posCart.push({ productId: id, name: p.name, price: p.price, qty: 1 });
+        }
+        render(); return;
+      }
+      if (act === "cart-qty") {
+        const id = el.dataset.id, d = parseInt(el.dataset.d, 10);
+        const p = state.products.find((x) => x.id === id);
+        state.posCart = state.posCart.map((i) => {
+          if (i.productId !== id) return i;
+          const next = i.qty + d;
+          if (p && d > 0 && next > p.qty) { alert(`Solo quedan ${p.qty} unidades de ${p.name}.`); return i; }
+          return { ...i, qty: Math.max(1, next) };
+        });
+        render(); return;
+      }
+      if (act === "cart-remove") { state.posCart = state.posCart.filter((i) => i.productId !== el.dataset.id); render(); return; }
+      if (act === "pos-method") {
+        if (el.disabled) return;
+        state.posMethod = el.dataset.m; render(); return;
+      }
+      if (act === "pos-confirm") {
+        const total = state.posCart.reduce((a,i)=>a+i.price*i.qty,0);
+        if (state.posCart.length===0) return;
+        if (state.posMethod==="credito" && !state.posClientId) return;
+        for (const i of state.posCart) {
+          const p = state.products.find((x) => x.id === i.productId);
+          if (!p || i.qty > p.qty) { alert(`No hay suficiente stock de ${i.name}. Disponible: ${p ? p.qty : 0}.`); return; }
+        }
+        const items = state.posCart.map(({productId,name,price,qty}) => ({productId,name,price,qty}));
+        const sale = registerSale({ items, total, payment: state.posMethod, clientId: state.posClientId||null, note: state.posNote });
+        state.posReceipt = sale; state.posCart=[]; state.posNote=""; state.posClientId=""; state.posMethod="efectivo_usd";
+        render(); return;
+      }
+      if (act === "share-receipt") {
+        const r = state.posReceipt && state.posReceipt.id === el.dataset.id ? state.posReceipt : state.sales.find((s) => s.id === el.dataset.id);
+        if (!r) return;
+        const text = buildReceiptText(r);
+        if (navigator.share) { navigator.share({ text }).catch(() => {}); }
+        else { window.open("https://wa.me/?text=" + encodeURIComponent(text), "_blank"); }
+        return;
+      }
+      if (act === "void-sale-start") { state.voidSaleId = el.dataset.id; render(); return; }
+      if (act === "void-sale-cancel") { state.voidSaleId = null; render(); return; }
+      if (act === "void-sale-confirm") {
+        voidSale(el.dataset.id);
+        state.voidSaleId = null;
+        if (state.posReceipt && state.posReceipt.id === el.dataset.id) state.posReceipt = null;
+        render(); return;
+      }
+      if (act === "export-sales-csv") {
+        const today = new Date().toDateString();
+        const todays = state.sales.filter((s) => new Date(s.date).toDateString() === today);
+        const rows = [["Fecha","Hora","Cliente","Método","Productos","Total USD","Total Bs"]];
+        todays.forEach((s) => {
+          rows.push([
+            new Date(s.date).toLocaleDateString("es-VE"),
+            new Date(s.date).toLocaleTimeString("es-VE",{hour:"2-digit",minute:"2-digit"}),
+            s.clientName, methodLabel(s.method),
+            s.items.map((it)=>`${it.qty}x ${it.name}`).join(" | "),
+            s.totalUSD.toFixed(2), s.totalBs.toFixed(2),
+          ]);
+        });
+        downloadCSV(`ventas_${new Date().toISOString().slice(0,10)}.csv`, rows);
+        return;
+      }
+      if (act === "new-sale") { state.posReceipt = null; render(); return; }
+
+      // CAJA
+      if (act === "cash-history") { state.cashShowHistory = true; render(); return; }
+      if (act === "cash-history-back") { state.cashShowHistory = false; render(); return; }
+      if (act === "cash-open-start") { state.cashOpening = true; render(); return; }
+      if (act === "cash-open-cancel") { state.cashOpening = false; state.openUSD=""; state.openBs=""; render(); return; }
+      if (act === "cash-open-confirm") {
+        const usd = parseFloat((state.openUSD||"0").replace(",",".")) || 0;
+        const bs = parseFloat((state.openBs||"0").replace(",",".")) || 0;
+        const bsAsUsd = state.bcv.rate>0 ? bs/state.bcv.rate : 0;
+        state.session = { open:true, id:uid(), openedAt:new Date().toISOString(), openingUSD:usd, openingBs:bs, openingBsAsUsd:bsAsUsd, movements:[] };
+        persist(["session"]); state.cashOpening=false; state.openUSD=""; state.openBs=""; render(); return;
+      }
+      if (act === "mov-start") { state.movType = el.dataset.t; render(); document.getElementById("movAmount")?.focus(); return; }
+      if (act === "mov-cancel") { state.movType=null; state.movAmount=""; state.movNote=""; render(); return; }
+      if (act === "mov-save") {
+        const v = parseFloat((state.movAmount||"").replace(",",".")); if (!v || v<=0) return;
+        const mv = { id:uid(), type:state.movType, amountUSD:v, method: state.movMethod||"efectivo_usd", note:(state.movNote||"").trim(), date:new Date().toISOString() };
+        state.session = { ...state.session, movements:[mv, ...state.session.movements] };
+        persist(["session"]); state.movType=null; state.movAmount=""; state.movNote=""; render(); return;
+      }
+      if (act === "cash-close-start") { state.cashClosing = true; render(); return; }
+      if (act === "cash-close-cancel") { state.cashClosing = false; render(); return; }
+      if (act === "cash-close-confirm") {
+        const closed = { ...state.session, open:false, closedAt:new Date().toISOString(),
+          countedUSD: parseFloat((state.countedUSD||"0").replace(",",".")) || 0,
+          countedBs: parseFloat((state.countedBs||"0").replace(",",".")) || 0 };
+        state.cashHistory = [closed, ...state.cashHistory];
+        state.session = null;
+        persist(["session","cashHistory"]);
+        state.cashClosing=false; state.countedUSD=""; state.countedBs=""; render(); return;
+      }
+
+      // CLIENTES
+      if (act === "cl-add-start") { state.clAdding = true; state.clEditId=null; state.clName=""; state.clPhone=""; render(); document.getElementById("clName")?.focus(); return; }
+      if (act === "cl-add-cancel") { state.clAdding=false; state.clEditId=null; state.clName=""; state.clPhone=""; render(); return; }
+      if (act === "cl-add-save") {
+        const name = (document.getElementById("clName").value||"").trim();
+        if (!name) return;
+        const phone = (document.getElementById("clPhone").value||"").trim();
+        if (state.clEditId) {
+          state.clients = state.clients.map((c) => c.id===state.clEditId ? { ...c, name, phone } : c);
+        } else {
+          state.clients = [{ id:uid(), name, phone, transactions:[] }, ...state.clients];
+        }
+        persist(["clients"]); state.clAdding=false; state.clEditId=null; state.clName=""; state.clPhone=""; render(); return;
+      }
+      if (act === "cl-edit-start") {
+        const c = state.clients.find((x)=>x.id===el.dataset.id);
+        if (!c) return;
+        state.clEditId = c.id; state.clAdding = true; state.clName = c.name; state.clPhone = c.phone||"";
+        render(); document.getElementById("clName")?.focus(); return;
+      }
+      if (act === "cl-delete-start") { state.clDeleteId = el.dataset.id; render(); return; }
+      if (act === "cl-delete-cancel") { state.clDeleteId = null; render(); return; }
+      if (act === "cl-delete-confirm") {
+        const id = el.dataset.id;
+        state.clients = state.clients.filter((c) => c.id !== id);
+        if (state.clientOpenId === id) state.clientOpenId = null;
+        state.clDeleteId = null;
+        persist(["clients"]); render(); return;
+      }
+      if (act === "cl-open") { state.clientOpenId = el.dataset.id; render(); return; }
+      if (act === "cl-back") { state.clientOpenId = null; state.txType=null; render(); return; }
+      if (act === "tx-start") { state.txType = el.dataset.t; render(); document.getElementById("txAmount")?.focus(); return; }
+      if (act === "tx-cancel") { state.txType=null; state.txAmount=""; state.txNote=""; render(); return; }
+      if (act === "tx-save") {
+        const v = parseFloat((state.txAmount||"").replace(",",".")); if (!v||v<=0) return;
+        const tx = { id:uid(), type:state.txType, amountUSD:v, rate: state.bcv.rate||0, amountBs: v*(state.bcv.rate||0), note:(state.txNote||"").trim(), date:new Date().toISOString() };
+        state.clients = state.clients.map((c) => c.id===state.clientOpenId ? { ...c, transactions:[tx, ...c.transactions] } : c);
+        persist(["clients"]); state.txType=null; state.txAmount=""; state.txNote=""; render(); return;
+      }
+      if (act === "tx-delete") {
+        const id = el.dataset.id;
+        state.clients = state.clients.map((c) => c.id===state.clientOpenId ? { ...c, transactions: c.transactions.filter((t)=>t.id!==id) } : c);
+        persist(["clients"]); render(); return;
+      }
+
+      // INVENTARIO
+      if (act === "inv-add-start") { state.invAdding=true; state.invEditId=null; state.pName=""; state.pQty=""; state.pCost=""; state.pPrice=""; render(); document.getElementById("pName")?.focus(); return; }
+      if (act === "inv-cancel") { state.invAdding=false; state.invEditId=null; render(); return; }
+      if (act === "inv-save") {
+        const name = (document.getElementById("pName").value||"").trim(); if (!name) return;
+        const payload = { name, qty: parseFloat(document.getElementById("pQty").value)||0, cost: parseFloat(document.getElementById("pCost").value)||0, price: parseFloat(document.getElementById("pPrice").value)||0 };
+        if (state.invEditId) state.products = state.products.map((p)=>p.id===state.invEditId?{...p,...payload}:p);
+        else state.products = [{ id:uid(), ...payload }, ...state.products];
+        persist(["products"]); state.invAdding=false; state.invEditId=null; render(); return;
+      }
+      if (act === "inv-edit") {
+        const p = state.products.find((x)=>x.id===el.dataset.id);
+        state.invEditId = p.id; state.invAdding = true;
+        state.pName=p.name; state.pQty=String(p.qty); state.pCost=String(p.cost); state.pPrice=String(p.price);
+        render(); return;
+      }
+      if (act === "inv-delete") { state.products = state.products.filter((p)=>p.id!==el.dataset.id); persist(["products"]); render(); return; }
+    });
+  });
+
+  // inputs que deben mantener su valor en el estado al escribir (sin perder foco al re-renderizar solo por otros eventos)
+  const bindInput = (id, key) => { const el = document.getElementById(id); if (el) el.addEventListener("input", () => { state[key] = el.value; }); };
+  bindInput("posSearch","posSearch"); bindInput("posNote","posNote");
+  bindInput("clSearch","clSearch"); bindInput("clName","clName"); bindInput("clPhone","clPhone");
+  bindInput("authEmail","authEmail"); bindInput("authPassword","authPassword");
+  bindInput("txAmount","txAmount"); bindInput("txNote","txNote");
+  bindInput("pName","pName"); bindInput("pQty","pQty"); bindInput("pCost","pCost"); bindInput("pPrice","pPrice");
+  bindInput("openUSD","openUSD"); bindInput("openBs","openBs");
+  bindInput("movAmount","movAmount"); bindInput("movNote","movNote");
+  bindInput("countedUSD","countedUSD"); bindInput("countedBs","countedBs");
+
+  const posSearchEl = document.getElementById("posSearch");
+  if (posSearchEl) posSearchEl.addEventListener("input", () => { state.posSearch = posSearchEl.value; renderProductListOnly(); });
+  const clSearchEl = document.getElementById("clSearch");
+  if (clSearchEl) clSearchEl.addEventListener("input", () => { state.clSearch = clSearchEl.value; renderClientListOnly(); });
+
+  const posClientEl = document.getElementById("posClient");
+  if (posClientEl) posClientEl.addEventListener("change", () => { state.posClientId = posClientEl.value; render(); });
+  const movMethodEl = document.getElementById("movMethod");
+  if (movMethodEl) movMethodEl.addEventListener("change", () => { state.movMethod = movMethodEl.value; });
+}
+
+// pequeñas re-renderizaciones parciales para no perder el foco al buscar
+function renderProductListOnly() {
+  if (state.tab !== "pos" || state.posCart.length > 0) { render(); return; }
+  const content = document.querySelector(".content");
+  if (!content) return render();
+  const wrap = content.querySelector(".grid2") ? content.querySelector(".grid2").parentElement : null;
+  const filtered = state.products.filter((p) => p.name.toLowerCase().includes(state.posSearch.toLowerCase()));
+  const target = content.querySelector(".grid2, .empty:last-of-type");
+  if (target) {
+    target.outerHTML = filtered.length === 0
+      ? `<div class="empty">${state.products.length===0 ? "Agrega productos en Inventario primero." : "Sin resultados."}</div>`
+      : `<div class="grid2">${filtered.map((p) => `
+          <button class="prodbtn" data-act="add-cart" data-id="${p.id}">
+            <div style="font-size:14px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(p.name)}</div>
+            <div class="muted" style="font-size:11px; margin-top:2px;">${p.qty<=0 ? '<span class="red">sin stock</span>' : p.qty + " uds"}</div>
+            <div class="mono green" style="font-size:14px; margin-top:4px;">${fmtUSD(p.price)}</div>
+          </button>`).join("")}</div>`;
+    bindEvents();
+  }
+}
+function renderClientListOnly() {
+  if (state.tab !== "clients" || state.clientOpenId) { render(); return; }
+  const content = document.querySelector(".content");
+  if (!content) return render();
+  const filtered = state.clients.filter((c) => c.name.toLowerCase().includes(state.clSearch.toLowerCase()));
+  const listHtml = filtered.length === 0 && !state.clAdding
+    ? `<div class="empty">${state.clients.length===0 ? "Aún no hay clientes. Toca + para agregar uno." : "Sin resultados."}</div>`
+    : filtered.map((c) => {
+        const bal = clientBalance(c);
+        return `
+          <div class="list-item tap" data-act="cl-open" data-id="${c.id}">
+            <div class="row">
+              <div>
+                <div style="font-size:14px; font-weight:500;">${esc(c.name)}</div>
+                ${c.phone ? `<div class="muted" style="font-size:11px; margin-top:2px;">📞 ${esc(c.phone)}</div>` : ""}
+              </div>
+              <div style="text-align:right;">
+                <div class="mono ${bal>0?"amber":bal<0?"green":"muted"}" style="font-size:14px; font-weight:600;">${fmtUSD(Math.abs(bal))}</div>
+                <div class="muted" style="font-size:10px;">${bal>0?"debe":bal<0?"a favor":"al día"}</div>
+              </div>
+            </div>
+          </div>`;
+      }).join("");
+  const anchor = state.clAdding ? content.querySelectorAll(".card")[0] : content.querySelector(".searchwrap");
+  if (!anchor) return render();
+  let node = anchor.nextElementSibling;
+  while (node) { const next = node.nextElementSibling; node.remove(); node = next; }
+  anchor.insertAdjacentHTML("afterend", listHtml);
+  bindEvents();
+}
+
+/* ---------------- arranque ---------------- */
+async function refreshBcvIfStale() {
+  const today = new Date().toDateString();
+  const lastFetch = state.bcv.fetchedAt ? new Date(state.bcv.fetchedAt).toDateString() : null;
+  const isStale = !state.bcv.rate || lastFetch !== today;
+  if (isStale) {
+    state.rateFetching = true; render();
+    const auto = await fetchBcvRate();
+    state.rateFetching = false;
+    if (auto) { state.bcv = auto; persist(["bcv"]); }
+    render();
+  }
+}
+
+async function boot() {
+  render();
+  window.addEventListener("online", () => { if (state.authUser) scheduleCloudPush(); renderAccountBarOnly(); });
+  window.addEventListener("offline", () => renderAccountBarOnly());
+  if ("serviceWorker" in navigator) {
+    try {
+      const reg = await navigator.serviceWorker.register("./service-worker.js");
+      reg.update(); // fuerza revisar si hay una versión nueva del archivo cada vez que se abre la app
+    } catch (e) { console.warn("SW error", e); }
+    let reloaded = false;
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if (reloaded) return;
+      reloaded = true;
+      window.location.reload();
+    });
+  }
+  auth.onAuthStateChanged(async (user) => {
+    state.authUser = user;
+    state.authReady = true;
+    if (user) {
+      await resolveInitialSync();
+      await refreshBcvIfStale();
+    } else {
+      render();
+    }
+  });
+}
+boot();
+</script>
+</body>
+</html>
